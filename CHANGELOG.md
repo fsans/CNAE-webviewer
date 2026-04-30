@@ -5,6 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.2.0] — 2026-04-30
+
+### Added
+
+- `FILEMAKER_CALLBACK` string constant — single place in the code to define the FileMaker script name that receives all outbound events (default: `'handle_app_event'`)
+- Standardised bridge envelope used in **both directions**:
+  ```json
+  { "cmd": "<action>", "data": { ... }, "token": "<string>" }
+  ```
+- `token` field in every envelope — async correlation id; echoed back by handlers so FileMaker can resolve promise-based calls; empty string when unused
+- `FM_HANDLERS` dispatch table — one named function per inbound `cmd`; adding a new command requires only a single entry in the table
+- `module_loaded` outbound event — fired on startup so FileMaker knows the widget is fully initialised and ready to receive commands
+
+### Changed
+
+- **Breaking:** `fmBridge(event, data)` renamed to `fmBridge(cmd, data, token)` and now wraps the payload in `{ cmd, data, token }` instead of spreading fields at the top level
+- **Breaking:** inbound `fmReceive` now expects `{ cmd, data, token }` instead of `{ action, ... }`; `cmd` replaces `action`, all payload fields move inside `data`
+- `fmBridge` calls `PerformScript(FILEMAKER_CALLBACK, ...)` instead of the hardcoded string `'CNAE_WebViewer_Event'`
+- `fmReceive` dispatch replaced: flat `switch` on `action` replaced by `FM_HANDLERS[cmd](data, token)` lookup
+
+---
+
 ## [1.1.0] — 2026-04-30
 
 ### Added

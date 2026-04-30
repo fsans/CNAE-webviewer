@@ -1,6 +1,6 @@
 # CNAE WebViewer
 
-> **Current version: 1.1.0** — see [CHANGELOG](CHANGELOG.md) for full history.
+> **Current version: 1.2.0** — see [CHANGELOG](CHANGELOG.md) for full history.
 
 A standalone single-file HTML chat widget that identifies Spanish/Catalan economic activity codes (CNAE — *Clasificación Nacional de Actividades Económicas*) through a conversational AI. Designed to be embedded inside a **FileMaker Pro WebViewer** but works in any modern browser.
 
@@ -37,7 +37,7 @@ The user types a plain-language description of an economic activity. The widget 
 | Dark / Light theme | Toggle button in the header; also settable via URL param or FileMaker bridge |
 | i18n | English, Spanish, Catalan — switchable at runtime |
 | Fluid width | Fills the container; clamped between 300 px and 800 px |
-| FileMaker bridge | Full two-way JS ↔ FileMaker integration (see below) |
+| FileMaker bridge | Full two-way JS ↔ FileMaker integration with standardised `{cmd, data, token}` envelope |
 | No build step | Pure HTML + CSS + vanilla JS; Bootstrap 5.3 + Bootstrap Icons from CDN |
 
 ---
@@ -58,7 +58,7 @@ The single `index.html` is the active file. The language-specific builds are kep
 
 ## Configuration
 
-Open `index.html` and edit the `CONFIG` block near the top of the `<script>` section:
+Open `index.html` and edit the `CONFIG` block and the `FILEMAKER_CALLBACK` constant near the top of the `<script>` section:
 
 ```js
 const CONFIG = {
@@ -69,6 +69,9 @@ const CONFIG = {
   theme:   'light',                      // default theme: 'light' | 'dark'
   debug:   false                         // show FM bridge debug panel
 };
+
+// Name of the FileMaker script that handles all inbound events from this widget
+const FILEMAKER_CALLBACK = 'handle_app_event';
 ```
 
 ### URL parameters
@@ -96,54 +99,97 @@ Or serve it from your LAN and use an `http://` URL.
 
 ---
 
+### Bridge envelope format
+
+All communication in both directions uses the same JSON envelope:
+
+```json
+{ "cmd": "<action_name>", "data": { }, "token": "<string>" }
+```
+
+| Field | Description |
+|---|---|
+| `cmd` | Name of the action to perform |
+| `data` | JSON object containing the payload for that action |
+| `token` | Async correlation id — echoed back so FileMaker can resolve promise-based calls; pass `""` when unused |
+
+---
+
 ### Outbound events (HTML → FileMaker)
 
-The widget calls `window.FileMaker.PerformScript('CNAE_WebViewer_Event', payload)` where `payload` is a JSON string.
+The widget calls `window.FileMaker.PerformScript(FILEMAKER_CALLBACK, json)` with a `{cmd, data, token}` envelope.
 
-| `event` | Extra fields | When |
+| `cmd` | `data` fields | When |
 |---|---|---|
-| `query_start` | `query`, `conversationId` | User submits a message |
-| `answer_received` | `query`, `answer`, `cnaeCodes[]`, `conversationId` | Full answer received |
-| `option_selected` | `code`, `description`, `confidence`, `auto`, `conversationId` | Primary result auto-selected (`auto: true`) or user clicked an alternative (`auto: false`) |
-| `conversation_reset` | — | New conversation started |
-| `error` | `message` | Network or API error |
-
-All payloads also include `ts` (Unix timestamp in ms).
-
-**FileMaker script name:** `CNAE_WebViewer_Event` (hardcoded — create a script with this exact name).
+| `module_loaded` | `{}` | Widget has fully initialised and is ready |
+| `query_start` | `{ query, conversationId }` | User submits a message |
+| `answer_received` | `{ query, answer, cnaeCodes[], conversationId }` | Full answer received from Dify |
+| `option_selected` | `{ code, description, confidence, auto, conversationId }` | Result selected — see below |
+| `conversation_reset` | `{}` | New conversation started |
+| `error` | `{ message }` | Network or API error |
 
 #### The `auto` field on `option_selected`
 
 | Value | Meaning |
 |---|---|
-| `true` | Fired automatically when the answer arrives — the primary (highest-confidence) result |
+| `true` | Fired automatically when the answer arrives — primary (highest-confidence) result |
 | `false` | Fired when the user explicitly clicks an alternative from the list |
 
-FileMaker scripts can use this flag to decide whether to write the value immediately or wait for explicit user confirmation.
+FileMaker scripts can use this flag to decide whether to write the value immediately or wait for user confirmation.
 
 ---
 
 ### Inbound commands (FileMaker → HTML)
 
-Call `window.fmReceive(jsonString)` from a FileMaker script using *Perform JavaScript in Web Viewer*.
+Call `window.fmReceive(jsonString)` from a FileMaker script using *Perform JavaScript in Web Viewer*, passing a `{cmd, data, token}` envelope.
+
+| `cmd` | `data` fields | Effect |
+|---|---|---|
+| `send` | `{ query }` | Pre-fill and submit a query |
+| `setApiKey` | `{ key }` | Replace the Dify API key at runtime |
+| `setLang` | `{ lang }` | Switch language: `'en'` \| `'es'` \| `'ca'` |
+| `setTheme` | `{ theme }` | Switch theme: `'light'` \| `'dark'` |
+| `newConversation` | `{}` | Reset the conversation |
+
+**Example FileMaker script parameter:**
 
 ```json
-{ "action": "send",            "query": "Venda de roba en linia" }
-{ "action": "setApiKey",       "key": "app-xxxx" }
-{ "action": "setLang",         "lang": "ca" }
-{ "action": "setTheme",        "theme": "dark" }
-{ "action": "newConversation"  }
+{ "cmd": "send", "data": { "query": "Venda de roba en linia" }, "token": "" }
 ```
+
+```json
+{ "cmd": "setLang", "data": { "lang": "ca" }, "token": "req-42" }
+```
+
+If a `token` is included, the corresponding handler receives it and can include it in any follow-up `fmBridge` call so FileMaker can match the response to the original request.
+
+---
+
+### Extending the bridge
+
+To add a new inbound command, add a single entry to the `FM_HANDLERS` object in `index.html`:
+
+```js
+const FM_HANDLERS = {
+  // ... existing handlers ...
+  myNewCommand(data, token) {
+    // do something with data
+    // optionally call fmBridge('some_response', { ... }, token) to reply
+  }
+};
+```
+
+No other changes are needed.
 
 ---
 
 ### Global functions
 
-These are also callable directly from FileMaker's *Perform JavaScript in Web Viewer* step:
+These are callable directly from FileMaker's *Perform JavaScript in Web Viewer* step:
 
 | Function | Description |
 |---|---|
-| `fmReceive(json)` | Process any inbound command (see above) |
+| `fmReceive(json)` | Process any inbound envelope |
 | `fmGetState()` | Returns JSON: `{ conversationId, lastAnswer, lastCodes, lang, theme }` |
 | `fmNewConversation()` | Reset conversation |
 | `fmSetLang(code)` | Switch language: `'en'`, `'es'`, `'ca'` |
