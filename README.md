@@ -1,5 +1,7 @@
 # CNAE WebViewer
 
+> **Current version: 1.1.0** — see [CHANGELOG](CHANGELOG.md) for full history.
+
 A standalone single-file HTML chat widget that identifies Spanish/Catalan economic activity codes (CNAE — *Clasificación Nacional de Actividades Económicas*) through a conversational AI. Designed to be embedded inside a **FileMaker Pro WebViewer** but works in any modern browser.
 
 ---
@@ -29,10 +31,12 @@ The user types a plain-language description of an economic activity. The widget 
 | Streaming chat | SSE streaming from Dify (`response_mode: streaming`) with live typing indicator |
 | Structured CNAE card | Primary code badge + confidence pill + description + category |
 | Alternative options | Clickable list; selecting one fires `option_selected` to FileMaker |
-| Auto-selection | Primary result is auto-selected on arrival and immediately sent to FileMaker |
+| Auto-selection | Primary result is auto-selected on arrival and immediately sent to FileMaker (`auto: true`) |
 | Reasoning disclosure | `<think>…</think>` content collapsed behind a toggle pill |
+| CNAE-2025 info banner | Collapsible legal/technical note with the official INE description of CNAE-2025; translated in English, Spanish, and Catalan |
 | Dark / Light theme | Toggle button in the header; also settable via URL param or FileMaker bridge |
 | i18n | English, Spanish, Catalan — switchable at runtime |
+| Fluid width | Fills the container; clamped between 300 px and 800 px |
 | FileMaker bridge | Full two-way JS ↔ FileMaker integration (see below) |
 | No build step | Pure HTML + CSS + vanilla JS; Bootstrap 5.3 + Bootstrap Icons from CDN |
 
@@ -69,7 +73,7 @@ const CONFIG = {
 
 ### URL parameters
 
-Both `lang` and `theme` can be overridden via query string without touching the file:
+`lang` and `theme` can be overridden via query string without touching the file:
 
 ```
 index.html?lang=es
@@ -108,6 +112,15 @@ All payloads also include `ts` (Unix timestamp in ms).
 
 **FileMaker script name:** `CNAE_WebViewer_Event` (hardcoded — create a script with this exact name).
 
+#### The `auto` field on `option_selected`
+
+| Value | Meaning |
+|---|---|
+| `true` | Fired automatically when the answer arrives — the primary (highest-confidence) result |
+| `false` | Fired when the user explicitly clicks an alternative from the list |
+
+FileMaker scripts can use this flag to decide whether to write the value immediately or wait for explicit user confirmation.
+
 ---
 
 ### Inbound commands (FileMaker → HTML)
@@ -140,13 +153,19 @@ These are also callable directly from FileMaker's *Perform JavaScript in Web Vie
 
 ## Theming
 
-The widget uses CSS custom properties. The full light and dark palettes are declared in `:root` and `[data-theme="dark"]` at the top of the `<style>` block — easy to customise without touching layout code.
+The widget uses CSS custom properties throughout. The full light and dark palettes are declared in `:root` and `[data-theme="dark"]` at the top of the `<style>` block — easy to customise without touching layout code.
+
+The accent colour is a neutral slate-grey (`#4b5563` in light mode, `#9ca3af` in dark mode). The header uses a fixed dark charcoal (`#374151` / `#1f2937`) that keeps white text readable in both themes.
 
 The toggle button (moon/sun icon) is in the header. Clicking it calls `toggleTheme()`.
 
 ---
 
-## CNAE answer format
+## CNAE-2025
+
+The widget includes a collapsible informational banner with the official INE description of CNAE-2025 — its statistical purpose, the joint revision process with NACE Rev. 2.1 (European) and ISIC Rev. 5 (international), and the phased adoption from 1 January 2025. The text is translated in all three supported languages.
+
+### Answer format
 
 The Dify chatflow is expected to return structured text in this format (Spanish or Catalan field names, both accepted):
 

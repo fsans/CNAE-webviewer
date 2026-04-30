@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.1.0] — 2026-04-30
+
+### Added
+
+- Collapsible CNAE-2025 legal/technical note banner below the header — collapsed by default, expands on click; translated in English, Spanish, and Catalan
+- Fluid layout: widget fills the container width, clamped between `min-width: 300px` and `max-width: 800px`
+
+### Changed
+
+- Colour palette replaced: Bootstrap blue (`#0d6efd`) replaced with a neutral slate-grey throughout (`#4b5563` light / `#9ca3af` dark) — discrete in both themes
+- Header background is now a fixed dark charcoal (`#374151` light / `#1f2937` dark) independent of the accent colour
+- Dark-mode confidence badge colours updated to match the new grey palette
+
+### Fixed
+
+- Corrected SRI integrity hash for the Bootstrap 5.3.3 JS bundle (previous hash caused a load failure in strict-mode browsers)
+
+---
+
 ## [1.0.0] — 2026-04-30
 
 ### Added
