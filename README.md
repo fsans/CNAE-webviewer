@@ -4,9 +4,21 @@ A standalone single-file HTML chat widget that identifies Spanish/Catalan econom
 
 ---
 
+## Dependency — CNAE Classifier chatflow
+
+This widget is a **front-end only**. It does not contain any classification logic. All AI inference is performed by the **CNAE Classifier** chatflow, which must be deployed separately on a [Dify](https://dify.ai) instance.
+
+The chatflow definition, prompt design, and model configuration are maintained in a separate repository:
+
+**https://github.com/fsans/CNAE_classifier**
+
+You need a running Dify deployment with that chatflow imported and an API key generated before this widget will produce any results.
+
+---
+
 ## How it works
 
-The user types a plain-language description of an economic activity. The widget sends it to a self-hosted [Dify](https://dify.ai) chatflow via its streaming API. The AI responds with a primary CNAE code (highest confidence) plus optional alternatives. The widget parses the structured response, renders a result card, and immediately notifies FileMaker via a JavaScript bridge.
+The user types a plain-language description of an economic activity. The widget sends it to the self-hosted Dify instance running the CNAE Classifier chatflow via its streaming API. The AI responds with a primary CNAE code (highest confidence) plus optional alternatives. The widget parses the structured response, renders a result card, and immediately notifies FileMaker via a JavaScript bridge.
 
 ---
 
@@ -159,6 +171,8 @@ If the response does not match this structure, it is rendered as a plain text bu
 - Mode: `response_mode: streaming`
 - SSE events used: `message`, `agent_message`, `message_end`
 - `<think>…</think>` reasoning blocks are handled transparently
+
+The chatflow that drives this widget is defined in [fsans/CNAE_classifier](https://github.com/fsans/CNAE_classifier). Refer to that repository for deployment instructions, model selection, and prompt customisation.
 
 ---
 
