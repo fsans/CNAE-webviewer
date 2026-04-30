@@ -1106,14 +1106,40 @@ function parseThink(raw) {
 /* ═══════════════════════════════════════════════════════════════
    CNAE ANSWER PARSER
    Handles Spanish and Catalan field names from the model.
+
+   Primary block expected format (any field order):
+     Codi CNAE / Codigo CNAE : XX.XX
+     Categoria               : ...
+     Descripcio oficial      : ...
+     Confianca / Confiança   : Alta | Mitjana | Baixa | Media | Baja
+
+   Alternatives block — two supported layouts:
+     A) Numbered inline:
+        1. Codi CNAE: 56.12 – Descripcion – Confianca: Mitjana
+     B) Numbered multi-field (same keys as primary, indented or not):
+        1. Codi CNAE: 56.12
+           Descripcio oficial: Descripcion
+           Confianca: Mitjana
+
+   Dash variants accepted: – (en-dash) — (em-dash) - (hyphen)
 ═══════════════════════════════════════════════════════════════ */
+// Any dash variant used as separator
+const DASH = '[\\u2013\\u2014\\-]';
+
 function parseCnaeAnswer(text) {
   if (!/Cod[io][gi]?\s+CNAE\s*:/i.test(text)) return null;
 
-  const codeM = text.match(/Cod[io][gi]?\s+CNAE\s*:\s*([\d.]+)/i);
-  const descM = text.match(/Descripc[ií][oó]\s+oficial\s*:\s*(.+)/i);
-  const catM  = text.match(/Categor[ií]a\s*:\s*(.+)/i);
-  const confM = text.match(/Confian[cç][ae]\s*:\s*(.+)/i);
+  // ── Primary block ─────────────────────────────────────────
+  // Isolate the primary block: everything before the first
+  // numbered list line (if any), so multi-value regexes don't
+  // bleed into the alternatives section.
+  const altSectionStart = text.search(/^\s*1\.\s+Cod[io][gi]?\s+CNAE/im);
+  const primaryText = altSectionStart > 0 ? text.slice(0, altSectionStart) : text;
+
+  const codeM = primaryText.match(/Cod[io][gi]?\s+CNAE\s*:\s*([\d.]+)/i);
+  const descM = primaryText.match(/Descripc[ií][oó](?:\s+oficial)?\s*:\s*(.+)/i);
+  const catM  = primaryText.match(/Categor[ií]a\s*:\s*(.+)/i);
+  const confM = primaryText.match(/Confian[cç][ae]\s*:\s*(.+)/i);
   if (!codeM) return null;
 
   const primary = {
@@ -1123,12 +1149,41 @@ function parseCnaeAnswer(text) {
     confidence:  confM ? confM[1].trim() : ''
   };
 
+  // ── Alternatives ──────────────────────────────────────────
   const alternatives = [];
-  const altPat = /^\d+\.\s+Cod[io][gi]?\s+CNAE\s*:\s*([\d.]+)\s*[–\-]\s*(.+?)\s*[–\-]\s*Confian[cç][ae]\s*:\s*(.+)/gim;
-  let m;
-  while ((m = altPat.exec(text)) !== null) {
-    alternatives.push({ code: m[1].trim(), description: m[2].trim(), confidence: m[3].trim() });
+
+  if (altSectionStart > 0) {
+    const altText = text.slice(altSectionStart);
+
+    // Layout A: 1. Codi CNAE: XX.XX – Description – Confianca: Value
+    const patA = new RegExp(
+      `^\\s*\\d+\\.\\s+Cod[io][gi]?\\s+CNAE\\s*:\\s*([\\d.]+)\\s*${DASH}\\s*(.+?)\\s*${DASH}\\s*Confian[cç][ae]\\s*:\\s*(.+)`,
+      'gim'
+    );
+    let m;
+    while ((m = patA.exec(altText)) !== null) {
+      alternatives.push({ code: m[1].trim(), description: m[2].trim(), confidence: m[3].trim() });
+    }
+
+    // Layout B: multi-line block starting with numbered "Codi CNAE:"
+    // Only run if layout A found nothing
+    if (alternatives.length === 0) {
+      const patBCode = /^\s*\d+\.\s+Cod[io][gi]?\s+CNAE\s*:\s*([\d.]+)/gim;
+      while ((m = patBCode.exec(altText)) !== null) {
+        const blockStart = m.index;
+        // Grab the next ~300 chars as the block for this entry
+        const block = altText.slice(blockStart, blockStart + 300);
+        const bDesc = block.match(/Descripc[ií][oó](?:\s+oficial)?\s*:\s*(.+)/i);
+        const bConf = block.match(/Confian[cç][ae]\s*:\s*(.+)/i);
+        alternatives.push({
+          code:        m[1].trim(),
+          description: bDesc ? bDesc[1].trim() : '',
+          confidence:  bConf ? bConf[1].trim() : ''
+        });
+      }
+    }
   }
+
   return { primary, alternatives };
 }
 
