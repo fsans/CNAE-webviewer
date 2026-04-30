@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CNAE — Buscador de Actividades</title>
+
+  <!-- Bootstrap 5 CDN -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
+  <!-- Bootstrap Icons -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    /* ── Colour tokens — light theme (default) ──────────────────── */
+    :root {
+      --clr-accent:        #4b5563;
+      --clr-accent-dark:   #374151;
+      --clr-accent-faint:  #e5e7eb;
+      --clr-accent-faint2: #f3f4f6;
+      --clr-accent-muted:  rgba(75,85,99,.12);
+
+      --clr-bg-page:       #f0f2f5;
+      --clr-bg-shell:      #fff;
+      --clr-bg-messages:   #f8f9fa;
+      --clr-bg-input:      #f8f9fa;
+      --clr-bg-input-focus:#fff;
+      --clr-bg-bubble-bot: #fff;
+      --clr-bg-think:      #f8f9fa;
+      --clr-bg-cnae-card:  #fff;
+      --clr-bg-cnae-alt:   #fff;
+      --clr-bg-conv-bar:   #fff;
+      --clr-bg-input-area: #fff;
+
+      --clr-border:        #dee2e6;
+      --clr-border-hover:  #adb5bd;
+
+      --clr-text-primary:  #212529;
+      --clr-text-secondary:#343a40;
+      --clr-text-muted:    #6c757d;
+      --clr-text-faint:    #adb5bd;
+
+      --clr-empty-icon-bg: #e5e7eb;
+      --clr-empty-title:   #212529;
+
+      --clr-think-toggle-hover-bg:   #e9ecef;
+      --clr-think-toggle-hover-text: #343a40;
+
+      --clr-err-bg:        #fff5f5;
+      --clr-err-border:    #f5c2c7;
+      --clr-err-text:      #842029;
+
+      --clr-header-bg:     #374151;
+      --clr-toggle-btn:    rgba(255,255,255,.7);
+      --clr-toggle-btn-hover: #fff;
+    }
+
+    /* ── Dark theme overrides ───────────────────────────────────── */
+    [data-theme="dark"] {
+      --clr-bg-page:       #0d0f12;
+      --clr-bg-shell:      #141720;
+      --clr-bg-messages:   #1a1d27;
+      --clr-bg-input:      #1e2130;
+      --clr-bg-input-focus:#252a3a;
+      --clr-bg-bubble-bot: #1e2130;
+      --clr-bg-think:      #1a1d27;
+      --clr-bg-cnae-card:  #1e2130;
+      --clr-bg-cnae-alt:   #1e2130;
+      --clr-bg-conv-bar:   #141720;
+      --clr-bg-input-area: #141720;
+
+      --clr-border:        #2e3347;
+      --clr-border-hover:  #4a5068;
+
+      --clr-text-primary:  #e2e6f0;
+      --clr-text-secondary:#c4c9d8;
+      --clr-text-muted:    #8891aa;
+      --clr-text-faint:    #555e7a;
+
+      --clr-empty-icon-bg: #252a36;
+      --clr-empty-title:   #e2e6f0;
+
+      --clr-think-toggle-hover-bg:   #252a3a;
+      --clr-think-toggle-hover-text: #c4c9d8;
+
+      --clr-err-bg:        #2a1820;
+      --clr-err-border:    #6b2a35;
+      --clr-err-text:      #f08080;
+
+      --clr-accent:        #9ca3af;
+      --clr-accent-dark:   #d1d5db;
+      --clr-accent-faint:  #1f2937;
+      --clr-accent-faint2: #263040;
+      --clr-accent-muted:  rgba(156,163,175,.15);
+      --clr-header-bg:     #1f2937;
+    }
+
+    /* ── Shell: full viewport height, widget-width ─────────────── */
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--clr-bg-page);
+      font-size: 14px;
+    }
+
+    .chat-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--clr-bg-shell);
+      border-left: 1px solid var(--clr-border);
+      border-right: 1px solid var(--clr-border);
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--clr-header-bg);
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .chat-header .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .chat-header .title {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .chat-header .title h6 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-header .title small {
+      font-size: 11px;
+      opacity: .8;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #adb5bd;
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+    .status-indicator.online  { background: #20c997; box-shadow: 0 0 0 2px rgba(32,201,151,.3); }
+    .status-indicator.working { background: #ffc107; animation: blink-status .8s infinite; }
+
+    @keyframes blink-status {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+
+    .btn-new-conv {
+      color: rgba(255,255,255,.8);
+      background: none;
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
+      flex-shrink: 0;
+    }
+    .btn-new-conv:hover {
+      background: rgba(255,255,255,.15);
+      color: #fff;
+    }
+
+    /* ── Theme toggle button ─────────────────────────────────────── */
+    .btn-theme-toggle {
+      color: var(--clr-toggle-btn);
+      background: none;
+      border: none;
+      padding: 4px 6px;
+      font-size: 15px;
+      cursor: pointer;
+      line-height: 1;
+      border-radius: 6px;
+      transition: color .15s, background .15s;
+      flex-shrink: 0;
+    }
+    .btn-theme-toggle:hover {
+      color: var(--clr-toggle-btn-hover);
+      background: rgba(255,255,255,.15);
+    }
+
+    /* ── Messages ───────────────────────────────────────────────── */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--clr-bg-messages);
+    }
+
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: 4px; }
+
+    /* ── Empty / welcome state ──────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      flex: 1;
+      padding: 32px 20px;
+      gap: 10px;
+      color: var(--clr-text-muted);
+    }
+
+    .empty-state .empty-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--clr-empty-icon-bg);
+      color: var(--clr-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .empty-state h6 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--clr-empty-title);
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.6;
+      max-width: 280px;
+    }
+
+    /* suggestion badges */
+    .suggestion-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 4px;
+    }
+
+    .suggestion-pill {
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--clr-accent);
+      color: var(--clr-accent);
+      background: var(--clr-bg-shell);
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      line-height: 1.4;
+    }
+    .suggestion-pill:hover {
+      background: var(--clr-accent);
+      color: #fff;
+    }
+
+    /* ── Message rows ───────────────────────────────────────────── */
+    .msg-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      animation: slide-up .18s ease both;
+    }
+
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-row.user  { align-items: flex-end; }
+    .msg-row.agent { align-items: flex-start; }
+
+    .msg-sender {
+      font-size: 10px;
+      color: var(--clr-text-faint);
+      font-weight: 500;
+      letter-spacing: .03em;
+      padding: 0 4px;
+    }
+
+    .msg-bubble {
+      max-width: 85%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .msg-row.user .msg-bubble {
+      background: var(--clr-accent);
+      color: #fff;
+      border-bottom-right-radius: 3px;
+    }
+
+    .msg-row.agent .msg-bubble {
+      background: var(--clr-bg-bubble-bot);
+      color: var(--clr-text-primary);
+      border: 1px solid var(--clr-border);
+      border-bottom-left-radius: 3px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+
+    .msg-row.error .msg-bubble {
+      background: var(--clr-err-bg);
+      border: 1px solid var(--clr-err-border);
+      color: var(--clr-err-text);
+      border-radius: 8px;
+      font-size: 12.5px;
+    }
+
+    /* ── Think block ────────────────────────────────────────────── */
+    .think-block {
+      max-width: 85%;
+      margin-bottom: 4px;
+    }
+
+    .think-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--clr-text-muted);
+      background: none;
+      border: 1px solid var(--clr-border);
+      border-radius: 20px;
+      padding: 3px 10px 3px 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s, color .15s, border-color .15s;
+      line-height: 1.4;
+    }
+    .think-toggle:hover {
+      background: var(--clr-think-toggle-hover-bg);
+      color: var(--clr-think-toggle-hover-text);
+      border-color: var(--clr-border-hover);
+    }
+
+    .think-toggle .think-arrow {
+      font-size: 10px;
+      transition: transform .2s ease;
+      display: inline-block;
+    }
+    .think-toggle.open .think-arrow {
+      transform: rotate(90deg);
+    }
+
+    .think-content {
+      display: none;
+      margin-top: 6px;
+      padding: 8px 12px;
+      background: var(--clr-bg-think);
+      border: 1px solid var(--clr-border);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--clr-text-muted);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-style: italic;
+    }
+    .think-content.open {
+      display: block;
+    }
+
+    /* ── CNAE result card ───────────────────────────────────────── */
+    .cnae-result {
+      max-width: 85%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* Primary card */
+    .cnae-primary {
+      background: var(--clr-bg-cnae-card);
+      border: 1.5px solid var(--clr-accent);
+      border-radius: 10px;
+      padding: 10px 13px;
+      box-shadow: 0 1px 4px var(--clr-accent-muted);
+    }
+
+    .cnae-primary .cnae-code-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .cnae-badge {
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--clr-accent);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 5px;
+      letter-spacing: .03em;
+      flex-shrink: 0;
+    }
+
+    .cnae-confidence {
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: .02em;
+      flex-shrink: 0;
+    }
+    .cnae-confidence.alta   { background: #d1e7dd; color: #0a3622; }
+    .cnae-confidence.mitjana,
+    .cnae-confidence.media  { background: #fff3cd; color: #664d03; }
+    .cnae-confidence.baixa,
+    .cnae-confidence.baja   { background: #f8d7da; color: #58151c; }
+
+    .cnae-description {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--clr-text-primary);
+      line-height: 1.4;
+    }
+
+    .cnae-category {
+      font-size: 11px;
+      color: var(--clr-text-muted);
+      margin-top: 2px;
+    }
+
+    /* Alternatives list */
+    .cnae-alternatives-label {
+      font-size: 10.5px;
+      color: var(--clr-text-muted);
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      padding: 0 2px;
+    }
+
+    .cnae-alt-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--clr-bg-cnae-alt);
+      border: 1px solid var(--clr-border);
+      border-radius: 8px;
+      padding: 7px 11px;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .cnae-alt-item:hover {
+      border-color: var(--clr-accent);
+      background: var(--clr-accent-faint2);
+      box-shadow: 0 1px 4px var(--clr-accent-muted);
+    }
+    .cnae-alt-item:active {
+      background: var(--clr-accent-faint);
+    }
+
+    .cnae-alt-badge {
+      font-family: monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--clr-accent);
+      flex-shrink: 0;
+      min-width: 42px;
+    }
+
+    .cnae-alt-desc {
+      flex: 1;
+      font-size: 12.5px;
+      color: var(--clr-text-secondary);
+      line-height: 1.3;
+    }
+
+    .cnae-alt-conf {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+    .cnae-alt-conf.alta   { background: #d1e7dd; color: #0a3622; }
+    .cnae-alt-conf.mitjana,
+    .cnae-alt-conf.media  { background: #fff3cd; color: #664d03; }
+    .cnae-alt-conf.baixa,
+    .cnae-alt-conf.baja   { background: #f8d7da; color: #58151c; }
+
+    /* Plain text fallback bubble (non-CNAE answers) */
+    .msg-plain {
+      background: var(--clr-bg-bubble-bot);
+      color: var(--clr-text-primary);
+      border: 1px solid var(--clr-border);
+      border-bottom-left-radius: 3px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+
+    /* typing indicator */
+    .typing-bubble {
+      background: var(--clr-bg-bubble-bot);
+      border: 1px solid var(--clr-border);
+      border-radius: 12px;
+      border-bottom-left-radius: 3px;
+      padding: 10px 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+
+    .typing-bubble span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--clr-text-faint);
+      animation: bounce-dot 1.2s infinite;
+    }
+    .typing-bubble span:nth-child(2) { animation-delay: .2s; }
+    .typing-bubble span:nth-child(3) { animation-delay: .4s; }
+
+    @keyframes bounce-dot {
+      0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+      30%            { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* ── Footer: conv info bar ──────────────────────────────────── */
+    .conv-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 14px 2px;
+      background: var(--clr-bg-conv-bar);
+      border-top: 1px solid var(--clr-border);
+      flex-shrink: 0;
+    }
+
+    .conv-id-label {
+      font-size: 10px;
+      color: var(--clr-text-faint);
+      font-family: monospace;
+      letter-spacing: .04em;
+    }
+
+    /* ── Input area ─────────────────────────────────────────────── */
+    .chat-input-area {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 8px 12px 12px;
+      background: var(--clr-bg-input-area);
+      flex-shrink: 0;
+    }
+
+    .chat-input-area textarea {
+      flex: 1;
+      resize: none;
+      border: 1.5px solid var(--clr-border);
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      outline: none;
+      max-height: 110px;
+      overflow-y: auto;
+      background: var(--clr-bg-input);
+      color: var(--clr-text-primary);
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .chat-input-area textarea:focus {
+      border-color: var(--clr-accent);
+      background: var(--clr-bg-input-focus);
+      box-shadow: 0 0 0 3px var(--clr-accent-muted);
+    }
+    .chat-input-area textarea::placeholder { color: var(--clr-text-faint); }
+
+    .btn-send {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--clr-accent);
+      color: #fff;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .15s, transform .1s, opacity .15s;
+    }
+    .btn-send:hover:not(:disabled) { background: var(--clr-accent-dark); }
+    .btn-send:active:not(:disabled) { transform: scale(.93); }
+    .btn-send:disabled { background: var(--clr-text-faint); cursor: not-allowed; opacity: .7; }
+
+    /* ── Confidence badge dark-mode overrides ───────────────────── */
+    [data-theme="dark"] .cnae-confidence.alta,
+    [data-theme="dark"] .cnae-alt-conf.alta   { background: #0d3322; color: #6ee7a8; }
+    [data-theme="dark"] .cnae-confidence.mitjana,
+    [data-theme="dark"] .cnae-confidence.media,
+    [data-theme="dark"] .cnae-alt-conf.mitjana,
+    [data-theme="dark"] .cnae-alt-conf.media   { background: #2e2100; color: #ffd666; }
+    [data-theme="dark"] .cnae-confidence.baixa,
+    [data-theme="dark"] .cnae-confidence.baja,
+    [data-theme="dark"] .cnae-alt-conf.baixa,
+    [data-theme="dark"] .cnae-alt-conf.baja    { background: #2d0f14; color: #f08080; }
+
+    /* ── FM debug panel ─────────────────────────────────────────── */
+    #fm-debug {
+      display: none;
+      position: fixed;
+      bottom: 72px;
+      right: 10px;
+      width: 240px;
+      background: #212529;
+      color: #6ee7b7;
+      font-family: monospace;
+      font-size: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      z-index: 999;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    }
+  </style>
+</head>
+
+<body>
+<div class="chat-shell">
+
+  <!-- HEADER -->
+  <div class="chat-header">
+    <div class="avatar">
+      <i class="bi bi-search"></i>
+    </div>
+    <div class="title">
+      <h6 id="i18n-title"></h6>
+      <small id="i18n-subtitle"></small>
+    </div>
+    <span class="status-indicator" id="statusDot"></span>
+    <button class="btn-theme-toggle" id="btnTheme" onclick="toggleTheme()" aria-label="Toggle dark/light theme" title="Toggle dark/light theme">
+      <i class="bi bi-moon-fill" id="themeIcon"></i>
+    </button>
+    <button class="btn-new-conv" id="btnNew" onclick="newConversation()">
+      <i class="bi bi-plus-circle"></i> <span id="i18n-new"></span>
+    </button>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="chat-messages" id="messages">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">
+        <i class="bi bi-building"></i>
+      </div>
+      <h6 id="i18n-empty-title"></h6>
+      <p id="i18n-empty-body"></p>
+      <div class="suggestion-list" id="suggestionList"></div>
+    </div>
+  </div>
+
+  <!-- CONVERSATION ID BAR -->
+  <div class="conv-bar">
+    <span class="conv-id-label" id="convLabel">&nbsp;</span>
+  </div>
+
+  <!-- INPUT -->
+  <div class="chat-input-area">
+    <textarea
+      id="userInput"
+      rows="1"
+      aria-label="message"
+    ></textarea>
+    <button class="btn-send" id="btnSend" onclick="sendMessage()">
+      <i class="bi bi-send-fill"></i>
+    </button>
+  </div>
+
+</div>
+
+<!-- FM debug panel -->
+<div id="fm-debug"></div>
+
+<!-- Bootstrap JS (bundle) -->
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+  crossorigin="anonymous"
+></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONFIG
+   lang: 'en' | 'es' | 'ca'
+   Override via URL param:  ?lang=ca
+   Override at runtime via FileMaker:  fmReceive({ action:'setLang', lang:'es' })
+═══════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  apiBase: 'http://192.168.30.249/v1',
+  apiKey:  'app-qrXVQ40INtv1v5ZR2lTiHvBu',
+  userId:  'fm-webviewer-user',
+  lang:    'ca',   // default language
+  theme:   'light', // 'light' | 'dark'
+  debug:   false
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   LOCALES
+   Each key holds an array: [en, es, ca]
+   Index map: en=0  es=1  ca=2
+═══════════════════════════════════════════════════════════════ */
+const LANG_INDEX = { en: 0, es: 1, ca: 2 };
+
+const LOCALES = {
+  // Header
+  title:          ['CNAE Assistant',                         'Asistente CNAE',                        'Assistent CNAE'],
+  subtitle:       ['Economic activity code finder',          'Clasificacion de actividades economicas','Classificacio d\'activitats economiques'],
+  btnNew:         ['New',                                    'Nueva',                                 'Nova'],
+
+  // Empty state
+  emptyTitle:     ['CNAE Code Finder',                       'Buscador de codigos CNAE',              'Cercador de codis CNAE'],
+  emptyBody:      ['Describe the economic activity in plain language and the assistant will identify the most suitable CNAE code.',
+                   'Describe en lenguaje natural la actividad economica y el asistente identificara el codigo mas adecuado.',
+                   'Descriu en llenguatge natural l\'activitat economica i l\'assistent identificara el codi mes adequat.'],
+
+  // Suggestion chips
+  suggestions:    [
+    ['Online clothing retail', 'Home appliance repair', 'IT consulting',           'Cafe and bar'],
+    ['Venta online de ropa',   'Reparacion de electrodomesticos', 'Consultoria informatica', 'Cafeteria y bar'],
+    ['Venda en linia de roba', 'Reparacio d\'electrodomestics',   'Consultoria informatica', 'Cafeteria i bar']
+  ],
+
+  // Input
+  placeholder:    ['Describe the economic activity...', 'Describe la actividad economica...', 'Descriu l\'activitat economica...'],
+  ariaInput:      ['Message',                           'Mensaje',                            'Missatge'],
+  ariaSend:       ['Send',                              'Enviar',                             'Envia'],
+
+  // Message sender labels
+  labelYou:       ['You',       'Tu',   'Tu'],
+  labelAgent:     ['CNAE Assistant', 'Asistente CNAE', 'Assistent CNAE'],
+  labelError:     ['Error',     'Error', 'Error'],
+
+  // Think block
+  thinkLabel:     ['Reasoning', 'Razonamiento', 'Raonament'],
+
+  // CNAE card
+  altOptionsLabel:['Other options', 'Otras opciones', 'Altres opcions'],
+  altSelectTitle: ['Select this option', 'Seleccionar esta opcion', 'Seleccionar aquesta opcio'],
+
+  // Error messages
+  errConnect:     ['Connection error: ',    'Error de conexion: ',   'Error de connexio: '],
+  errNoResponse:  ['No response received from server.', 'No se recibio respuesta del servidor.', 'No s\'ha rebut cap resposta del servidor.']
+};
+
+/* ─── t(key) — look up the current language string ─────────── */
+function t(key) {
+  const idx = LANG_INDEX[CONFIG.lang] ?? 1;
+  return (LOCALES[key] && LOCALES[key][idx]) ?? LOCALES[key]?.[0] ?? key;
+}
+
+/* ─── applyLocale() — stamp all static UI nodes ────────────── */
+function applyLocale() {
+  const lang = CONFIG.lang;
+  document.documentElement.lang = lang;
+
+  document.getElementById('i18n-title').textContent      = t('title');
+  document.getElementById('i18n-subtitle').textContent   = t('subtitle');
+  document.getElementById('i18n-new').textContent        = t('btnNew');
+  document.getElementById('i18n-empty-title').textContent = t('emptyTitle');
+  document.getElementById('i18n-empty-body').textContent  = t('emptyBody');
+
+  inputEl.placeholder          = t('placeholder');
+  inputEl.setAttribute('aria-label', t('ariaInput'));
+  btnSend.setAttribute('aria-label', t('ariaSend'));
+
+  // Rebuild suggestion chips
+  const list = document.getElementById('suggestionList');
+  list.innerHTML = '';
+  const idx = LANG_INDEX[lang] ?? 1;
+  LOCALES.suggestions[idx].forEach(text => {
+    const pill = document.createElement('span');
+    pill.className = 'suggestion-pill';
+    pill.textContent = text;
+    pill.onclick = () => fillSuggestion(pill);
+    list.appendChild(pill);
+  });
+}
+
+/* ─── setLang(code) — switch at any time ───────────────────── */
+function setLang(code) {
+  if (!(code in LANG_INDEX)) return;
+  CONFIG.lang = code;
+  applyLocale();
+}
+
+/* ─── setTheme(mode) — 'light' | 'dark' ────────────────────── */
+function setTheme(mode) {
+  if (mode !== 'light' && mode !== 'dark') return;
+  CONFIG.theme = mode;
+  document.documentElement.setAttribute('data-theme', mode);
+  const icon = document.getElementById('themeIcon');
+  if (icon) {
+    icon.className = mode === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+  }
+}
+
+function toggleTheme() {
+  setTheme(CONFIG.theme === 'dark' ? 'light' : 'dark');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+let conversationId = '';
+let isThinking     = false;
+let lastAnswer     = '';
+let lastCodes      = [];
+
+/* ═══════════════════════════════════════════════════════════════
+   DOM REFS
+═══════════════════════════════════════════════════════════════ */
+const messagesEl = document.getElementById('messages');
+const emptyEl    = document.getElementById('emptyState');
+const inputEl    = document.getElementById('userInput');
+const btnSend    = document.getElementById('btnSend');
+const statusDot  = document.getElementById('statusDot');
+const convLabel  = document.getElementById('convLabel');
+const fmDebug    = document.getElementById('fm-debug');
+
+if (CONFIG.debug) fmDebug.style.display = 'block';
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT — read ?lang= from URL, apply locale, then boot
+═══════════════════════════════════════════════════════════════ */
+(function init() {
+  const params = new URLSearchParams(window.location.search);
+  const urlLang  = params.get('lang');
+  const urlTheme = params.get('theme');
+  if (urlLang  && urlLang  in LANG_INDEX) CONFIG.lang = urlLang;
+  if (urlTheme === 'dark' || urlTheme === 'light') CONFIG.theme = urlTheme;
+  applyLocale();
+  setTheme(CONFIG.theme);
+  statusDot.className = 'status-indicator online';
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTO-RESIZE TEXTAREA
+═══════════════════════════════════════════════════════════════ */
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 110) + 'px';
+});
+
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   SEND MESSAGE
+═══════════════════════════════════════════════════════════════ */
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || isThinking) return;
+
+  hideEmpty();
+  appendMessage('user', text);
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+
+  setThinking(true);
+  const thinkingEl = appendThinking();
+  fmBridge('query_start', { query: text, conversationId });
+
+  try {
+    const result = await callDify(text);
+    thinkingEl.remove();
+    appendMessage('agent', result.answer);
+    conversationId = result.conversationId;
+    updateConvLabel();
+
+    const { answer: cleanAnswer } = parseThink(result.answer);
+    lastAnswer = cleanAnswer;
+    lastCodes  = extractCnaeCodes(cleanAnswer);
+
+    fmBridge('answer_received', {
+      query: text, answer: cleanAnswer,
+      cnaeCodes: lastCodes, conversationId: result.conversationId
+    });
+
+    // Auto-select the primary (highest-confidence) result immediately
+    const cnae = parseCnaeAnswer(cleanAnswer);
+    if (cnae) {
+      lastCodes  = [cnae.primary.code];
+      lastAnswer = `${cnae.primary.code} \u2014 ${cnae.primary.description}`;
+      fmBridge('option_selected', {
+        code:        cnae.primary.code,
+        description: cnae.primary.description,
+        confidence:  cnae.primary.confidence,
+        auto:        true,
+        conversationId: result.conversationId
+      });
+    }
+
+  } catch (err) {
+    thinkingEl.remove();
+    appendMessage('error', t('errConnect') + err.message);
+    fmBridge('error', { message: err.message });
+  } finally {
+    setThinking(false);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DIFY API  (streaming SSE)
+═══════════════════════════════════════════════════════════════ */
+async function callDify(query) {
+  const res = await fetch(`${CONFIG.apiBase}/chat-messages`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${CONFIG.apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      inputs: {}, query,
+      response_mode:   'streaming',
+      conversation_id: conversationId || '',
+      user:            CONFIG.userId
+    })
+  });
+  if (!res.ok) { const txt = await res.text(); throw new Error(`HTTP ${res.status}: ${txt.slice(0,200)}`); }
+  return parseStream(res.body);
+}
+
+async function parseStream(body) {
+  const reader = body.getReader(), dec = new TextDecoder();
+  let buf = '', answer = '', convId = conversationId;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n'); buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const raw = line.slice(6).trim();
+      if (raw === '[DONE]') continue;
+      let evt; try { evt = JSON.parse(raw); } catch { continue; }
+      if (evt.event === 'message' || evt.event === 'agent_message') answer += (evt.answer || '');
+      if (evt.conversation_id) convId = evt.conversation_id;
+    }
+  }
+  if (!answer) throw new Error(t('errNoResponse'));
+  return { answer, conversationId: convId };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CNAE CODE EXTRACTION
+═══════════════════════════════════════════════════════════════ */
+function extractCnaeCodes(text) {
+  const pat = /\b([A-U]?\d{2}\.?\d{0,2})\b/g, out = [];
+  let m;
+  while ((m = pat.exec(text)) !== null) {
+    const c = m[1].replace('.', '');
+    if (!out.includes(c) && c.length >= 2) out.push(c);
+  }
+  return out;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THINK PARSER
+═══════════════════════════════════════════════════════════════ */
+function parseThink(raw) {
+  const m = raw.match(/^<think>([\s\S]*?)<\/think>\s*/);
+  if (m) return { think: m[1].trim(), answer: raw.slice(m[0].length).trim() };
+  return { think: null, answer: raw };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CNAE ANSWER PARSER
+   Handles Spanish and Catalan field names from the model.
+═══════════════════════════════════════════════════════════════ */
+function parseCnaeAnswer(text) {
+  if (!/Cod[io][gi]?\s+CNAE\s*:/i.test(text)) return null;
+
+  const codeM = text.match(/Cod[io][gi]?\s+CNAE\s*:\s*([\d.]+)/i);
+  const descM = text.match(/Descripc[ií][oó]\s+oficial\s*:\s*(.+)/i);
+  const catM  = text.match(/Categor[ií]a\s*:\s*(.+)/i);
+  const confM = text.match(/Confian[cç][ae]\s*:\s*(.+)/i);
+  if (!codeM) return null;
+
+  const primary = {
+    code:        codeM[1].trim(),
+    description: descM ? descM[1].trim() : '',
+    category:    catM  ? catM[1].trim()  : '',
+    confidence:  confM ? confM[1].trim() : ''
+  };
+
+  const alternatives = [];
+  const altPat = /^\d+\.\s+Cod[io][gi]?\s+CNAE\s*:\s*([\d.]+)\s*[–\-]\s*(.+?)\s*[–\-]\s*Confian[cç][ae]\s*:\s*(.+)/gim;
+  let m;
+  while ((m = altPat.exec(text)) !== null) {
+    alternatives.push({ code: m[1].trim(), description: m[2].trim(), confidence: m[3].trim() });
+  }
+  return { primary, alternatives };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONFIDENCE CLASS HELPER
+═══════════════════════════════════════════════════════════════ */
+function confClass(conf) {
+  const v = conf.toLowerCase();
+  if (v === 'alta'  || v === 'high') return 'alta';
+  if (v === 'baixa' || v === 'baja' || v === 'low') return 'baixa';
+  return 'mitjana';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DOM HELPERS
+═══════════════════════════════════════════════════════════════ */
+function appendMessage(role, rawText) {
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+
+  const sender = document.createElement('div');
+  sender.className = 'msg-sender';
+  sender.textContent = role === 'user' ? t('labelYou')
+                     : role === 'agent' ? t('labelAgent')
+                     : t('labelError');
+  row.appendChild(sender);
+
+  if (role === 'agent') {
+    const { think, answer } = parseThink(rawText);
+
+    // Collapsible think block
+    if (think) {
+      const thinkBlock = document.createElement('div');
+      thinkBlock.className = 'think-block';
+
+      const toggle = document.createElement('button');
+      toggle.className = 'think-toggle';
+      toggle.innerHTML = `<span class="think-arrow">&#9658;</span> ${t('thinkLabel')}`;
+      toggle.setAttribute('aria-expanded', 'false');
+
+      const content = document.createElement('div');
+      content.className = 'think-content';
+      content.textContent = think;
+
+      toggle.addEventListener('click', () => {
+        const open = content.classList.toggle('open');
+        toggle.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+
+      thinkBlock.appendChild(toggle);
+      thinkBlock.appendChild(content);
+      row.appendChild(thinkBlock);
+    }
+
+    // Structured CNAE card or plain text fallback
+    const cnae = parseCnaeAnswer(answer);
+
+    if (cnae) {
+      const wrap = document.createElement('div');
+      wrap.className = 'cnae-result';
+
+      // Helper: apply/clear selected highlight on primary card
+      function applyPrimarySelected(el, selected) {
+        const root = getComputedStyle(document.documentElement);
+        el.style.borderColor = selected ? root.getPropertyValue('--clr-accent').trim() : '';
+        el.style.background  = selected ? root.getPropertyValue('--clr-accent-faint').trim() : '';
+      }
+
+      // Primary card — starts in selected state (auto-selected)
+      const primary = document.createElement('div');
+      primary.className = 'cnae-primary cnae-primary-selected';
+
+      const codeRow = document.createElement('div');
+      codeRow.className = 'cnae-code-row';
+
+      const badge = document.createElement('span');
+      badge.className = 'cnae-badge';
+      badge.textContent = cnae.primary.code;
+
+      const conf = document.createElement('span');
+      conf.className = `cnae-confidence ${confClass(cnae.primary.confidence)}`;
+      conf.textContent = cnae.primary.confidence;
+
+      codeRow.appendChild(badge);
+      codeRow.appendChild(conf);
+
+      const desc = document.createElement('div');
+      desc.className = 'cnae-description';
+      desc.textContent = cnae.primary.description;
+
+      primary.appendChild(codeRow);
+      primary.appendChild(desc);
+
+      if (cnae.primary.category) {
+        const cat = document.createElement('div');
+        cat.className = 'cnae-category';
+        cat.textContent = cnae.primary.category;
+        primary.appendChild(cat);
+      }
+      wrap.appendChild(primary);
+
+      // Apply initial selected highlight after element is in the wrap
+      requestAnimationFrame(() => applyPrimarySelected(primary, true));
+
+      // Alternatives
+      if (cnae.alternatives.length > 0) {
+        const altLabel = document.createElement('div');
+        altLabel.className = 'cnae-alternatives-label';
+        altLabel.textContent = t('altOptionsLabel');
+        wrap.appendChild(altLabel);
+
+        cnae.alternatives.forEach(alt => {
+          const item = document.createElement('div');
+          item.className = 'cnae-alt-item';
+          item.title = t('altSelectTitle');
+
+          const altBadge = document.createElement('span');
+          altBadge.className = 'cnae-alt-badge';
+          altBadge.textContent = alt.code;
+
+          const altDesc = document.createElement('span');
+          altDesc.className = 'cnae-alt-desc';
+          altDesc.textContent = alt.description;
+
+          const altConf = document.createElement('span');
+          altConf.className = `cnae-alt-conf ${confClass(alt.confidence)}`;
+          altConf.textContent = alt.confidence;
+
+          item.appendChild(altBadge);
+          item.appendChild(altDesc);
+          item.appendChild(altConf);
+
+          item.addEventListener('click', () => {
+            // Deselect primary card
+            applyPrimarySelected(primary, false);
+            // Deselect all alt items
+            row.querySelectorAll('.cnae-alt-item').forEach(el => {
+              el.style.borderColor = '';
+              el.style.background  = '';
+            });
+            const root = getComputedStyle(document.documentElement);
+            item.style.borderColor = root.getPropertyValue('--clr-accent').trim();
+            item.style.background  = root.getPropertyValue('--clr-accent-faint').trim();
+            lastCodes  = [alt.code];
+            lastAnswer = `${alt.code} \u2014 ${alt.description}`;
+            fmBridge('option_selected', { code: alt.code, description: alt.description, confidence: alt.confidence, auto: false, conversationId });
+          });
+
+          wrap.appendChild(item);
+        });
+      }
+
+      row.appendChild(wrap);
+
+    } else {
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble msg-plain';
+      bubble.textContent = answer;
+      row.appendChild(bubble);
+    }
+
+  } else {
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = rawText;
+    row.appendChild(bubble);
+  }
+
+  messagesEl.appendChild(row);
+  scrollBottom();
+  return row;
+}
+
+function appendThinking() {
+  const row = document.createElement('div');
+  row.className = 'msg-row agent';
+
+  const sender = document.createElement('div');
+  sender.className = 'msg-sender';
+  sender.textContent = t('labelAgent');
+
+  const bubble = document.createElement('div');
+  bubble.className = 'typing-bubble';
+  bubble.innerHTML = '<span></span><span></span><span></span>';
+
+  row.appendChild(sender);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  scrollBottom();
+  return row;
+}
+
+function hideEmpty()    { if (emptyEl) emptyEl.style.display = 'none'; }
+function scrollBottom() { messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' }); }
+
+function setThinking(val) {
+  isThinking = val;
+  btnSend.disabled = val;
+  statusDot.className = 'status-indicator ' + (val ? 'working' : 'online');
+}
+
+function updateConvLabel() {
+  convLabel.textContent = conversationId
+    ? 'conv: ' + conversationId.slice(0, 8) + '\u2026'
+    : '\u00a0';
+}
+
+function newConversation() {
+  conversationId = '';
+  lastAnswer = '';
+  lastCodes  = [];
+  updateConvLabel();
+  messagesEl.innerHTML = '';
+  messagesEl.appendChild(emptyEl);
+  emptyEl.style.display = 'flex';
+  fmBridge('conversation_reset', {});
+}
+
+function fillSuggestion(el) {
+  inputEl.value = el.textContent;
+  inputEl.focus();
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 110) + 'px';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FILEMAKER WEBVIEWER BRIDGE
+   ─────────────────────────────────────────────────────────────
+   Outbound (HTML -> FM):  window.FileMaker.PerformScript('CNAE_WebViewer_Event', payload)
+   Inbound  (FM -> HTML):  window.fmReceive(jsonString)
+
+   Events emitted to FileMaker:
+     query_start       { query, conversationId }
+     answer_received   { query, answer, cnaeCodes[], conversationId }
+     option_selected   { code, description, confidence, auto, conversationId }
+                       auto=true  -> primary result, fired automatically after answer
+                       auto=false -> user clicked an alternative
+     conversation_reset {}
+     error             { message }
+
+   Functions callable by FileMaker:
+     window.fmReceive(json)     actions: send | setApiKey | setLang | setTheme | newConversation
+     window.fmGetState()        returns { conversationId, lastAnswer, lastCodes, lang, theme }
+     window.fmNewConversation()
+     window.fmSetLang(code)     switch language: 'en' | 'es' | 'ca'
+     window.fmSetTheme(mode)    switch theme: 'light' | 'dark'
+═══════════════════════════════════════════════════════════════ */
+function fmBridge(event, data) {
+  const payload = JSON.stringify({ event, ...data, ts: Date.now() });
+  if (CONFIG.debug) fmDebug.textContent = '-> FM\n' + JSON.stringify({ event, ...data }, null, 2);
+  if (window.FileMaker && typeof window.FileMaker.PerformScript === 'function') {
+    window.FileMaker.PerformScript('CNAE_WebViewer_Event', payload);
+  } else {
+    console.log('[FM Bridge ->]', event, data);
+  }
+}
+
+window.fmReceive = function(jsonString) {
+  let cmd;
+  try { cmd = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString; }
+  catch(e) { console.warn('[FM Bridge <-] bad JSON', jsonString); return; }
+  if (CONFIG.debug) fmDebug.textContent = '<- FM\n' + JSON.stringify(cmd, null, 2);
+  switch (cmd.action) {
+    case 'send':            if (cmd.query) { inputEl.value = cmd.query; sendMessage(); } break;
+    case 'setApiKey':       if (cmd.key)   CONFIG.apiKey = cmd.key; break;
+    case 'setLang':         if (cmd.lang)  setLang(cmd.lang); break;
+    case 'setTheme':        if (cmd.theme) setTheme(cmd.theme); break;
+    case 'newConversation': newConversation(); break;
+    default: console.warn('[FM Bridge <-] unknown action', cmd.action);
+  }
+};
+
+window.fmGetState        = () => JSON.stringify({ conversationId, lastAnswer, lastCodes, lang: CONFIG.lang, theme: CONFIG.theme });
+window.fmNewConversation = newConversation;
+window.fmSetLang         = setLang;
+window.fmSetTheme        = setTheme;
+</script>
+</body>
+</html>
