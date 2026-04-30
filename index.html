@@ -799,7 +799,7 @@
    CONFIG
    lang: 'en' | 'es' | 'ca'
    Override via URL param:  ?lang=ca
-   Override at runtime via FileMaker:  fmReceive({ action:'setLang', lang:'es' })
+   Override at runtime via FileMaker:  fmReceive({ cmd:'setLang', data:{ lang:'es' } })
 ═══════════════════════════════════════════════════════════════ */
 const CONFIG = {
   apiBase: 'http://192.168.30.249/v1',
@@ -809,6 +809,13 @@ const CONFIG = {
   theme:   'light', // 'light' | 'dark'
   debug:   false
 };
+
+/* ═══════════════════════════════════════════════════════════════
+   FILEMAKER BRIDGE CONSTANTS
+   Change FILEMAKER_CALLBACK to match the FileMaker script name
+   that handles inbound events from this web viewer.
+═══════════════════════════════════════════════════════════════ */
+const FILEMAKER_CALLBACK = 'handle_app_event';
 
 /* ═══════════════════════════════════════════════════════════════
    LOCALES
@@ -965,6 +972,7 @@ document.getElementById('techNoteToggle').addEventListener('click', function() {
   applyLocale();
   setTheme(CONFIG.theme);
   statusDot.className = 'status-indicator online';
+  fmBridge('module_loaded', {});
 })();
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1350,47 +1358,105 @@ function fillSuggestion(el) {
 /* ═══════════════════════════════════════════════════════════════
    FILEMAKER WEBVIEWER BRIDGE
    ─────────────────────────────────────────────────────────────
-   Outbound (HTML -> FM):  window.FileMaker.PerformScript('CNAE_WebViewer_Event', payload)
-   Inbound  (FM -> HTML):  window.fmReceive(jsonString)
+   Shared envelope format (both directions):
+     {
+       "cmd":   "<action_name>",   // what to do
+       "data":  { ... },           // action payload
+       "token": "<string>"         // async correlation id (empty string if unused)
+     }
 
-   Events emitted to FileMaker:
-     query_start       { query, conversationId }
-     answer_received   { query, answer, cnaeCodes[], conversationId }
-     option_selected   { code, description, confidence, auto, conversationId }
+   OUTBOUND  HTML → FileMaker
+   ─────────────────────────────────────────────────────────────
+   Calls: window.FileMaker.PerformScript(FILEMAKER_CALLBACK, json)
+
+   cmd               data fields
+   ───────────────   ─────────────────────────────────────────────
+   query_start       { query, conversationId }
+   answer_received   { query, answer, cnaeCodes[], conversationId }
+   option_selected   { code, description, confidence, auto, conversationId }
                        auto=true  -> primary result, fired automatically after answer
                        auto=false -> user clicked an alternative
-     conversation_reset {}
-     error             { message }
+   conversation_reset {}
+   error             { message }
+   module_loaded     {}
 
-   Functions callable by FileMaker:
-     window.fmReceive(json)     actions: send | setApiKey | setLang | setTheme | newConversation
-     window.fmGetState()        returns { conversationId, lastAnswer, lastCodes, lang, theme }
-     window.fmNewConversation()
-     window.fmSetLang(code)     switch language: 'en' | 'es' | 'ca'
-     window.fmSetTheme(mode)    switch theme: 'light' | 'dark'
+   INBOUND  FileMaker → HTML
+   ─────────────────────────────────────────────────────────────
+   Call: window.fmReceive(jsonString)
+
+   cmd               data fields
+   ───────────────   ─────────────────────────────────────────────
+   send              { query }
+   setApiKey         { key }
+   setLang           { lang }          'en' | 'es' | 'ca'
+   setTheme          { theme }         'light' | 'dark'
+   newConversation   {}
+
+   If a token is present in the inbound envelope it is echoed back
+   in the outbound response so FileMaker can resolve async calls.
+
+   GLOBAL FUNCTIONS (callable from FileMaker JS step)
+   ─────────────────────────────────────────────────────────────
+   fmReceive(json)        process any inbound envelope
+   fmGetState()           returns { conversationId, lastAnswer, lastCodes, lang, theme }
+   fmNewConversation()    reset conversation
+   fmSetLang(code)        switch language
+   fmSetTheme(mode)       switch theme
 ═══════════════════════════════════════════════════════════════ */
-function fmBridge(event, data) {
-  const payload = JSON.stringify({ event, ...data, ts: Date.now() });
-  if (CONFIG.debug) fmDebug.textContent = '-> FM\n' + JSON.stringify({ event, ...data }, null, 2);
+
+/* ── Outbound: HTML → FileMaker ─────────────────────────────── */
+function fmBridge(cmd, data, token) {
+  const envelope = {
+    cmd,
+    data:  data  || {},
+    token: token || ''
+  };
+  if (CONFIG.debug) fmDebug.textContent = '-> FM\n' + JSON.stringify(envelope, null, 2);
   if (window.FileMaker && typeof window.FileMaker.PerformScript === 'function') {
-    window.FileMaker.PerformScript('CNAE_WebViewer_Event', payload);
+    window.FileMaker.PerformScript(FILEMAKER_CALLBACK, JSON.stringify(envelope));
   } else {
-    console.log('[FM Bridge ->]', event, data);
+    console.log('[FM Bridge ->]', envelope);
   }
 }
 
+/* ── Inbound handlers: one function per cmd ─────────────────── */
+const FM_HANDLERS = {
+  send(data) {
+    if (data.query) { inputEl.value = data.query; sendMessage(); }
+  },
+  setApiKey(data) {
+    if (data.key) CONFIG.apiKey = data.key;
+  },
+  setLang(data) {
+    if (data.lang) setLang(data.lang);
+  },
+  setTheme(data) {
+    if (data.theme) setTheme(data.theme);
+  },
+  newConversation() {
+    newConversation();
+  }
+};
+
+/* ── Inbound: FileMaker → HTML ──────────────────────────────── */
 window.fmReceive = function(jsonString) {
-  let cmd;
-  try { cmd = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString; }
-  catch(e) { console.warn('[FM Bridge <-] bad JSON', jsonString); return; }
-  if (CONFIG.debug) fmDebug.textContent = '<- FM\n' + JSON.stringify(cmd, null, 2);
-  switch (cmd.action) {
-    case 'send':            if (cmd.query) { inputEl.value = cmd.query; sendMessage(); } break;
-    case 'setApiKey':       if (cmd.key)   CONFIG.apiKey = cmd.key; break;
-    case 'setLang':         if (cmd.lang)  setLang(cmd.lang); break;
-    case 'setTheme':        if (cmd.theme) setTheme(cmd.theme); break;
-    case 'newConversation': newConversation(); break;
-    default: console.warn('[FM Bridge <-] unknown action', cmd.action);
+  let envelope;
+  try {
+    envelope = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
+  } catch(e) {
+    console.warn('[FM Bridge <-] bad JSON', jsonString);
+    return;
+  }
+
+  if (CONFIG.debug) fmDebug.textContent = '<- FM\n' + JSON.stringify(envelope, null, 2);
+
+  const { cmd, data = {}, token = '' } = envelope;
+  const handler = FM_HANDLERS[cmd];
+
+  if (handler) {
+    handler(data, token);
+  } else {
+    console.warn('[FM Bridge <-] unknown cmd:', cmd);
   }
 };
 
