@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.3.0] — 2026-04-30
+
+### Fixed
+
+- `parseCnaeAnswer()` completely rewritten to be robust against all observed model output variants:
+  - Markdown bold/italic markers (`**key**:` or `*key*:`) stripped via `normaliseMd()` before any regex runs, so bold formatting never prevents parsing
+  - CNAE key now matches Catalan (`Codi CNAE`), Spanish (`Codigo CNAE`), and English (`CNAE Code`)
+  - Alternatives section detected by either a known section header (`Opcions addicionals`, `Otras opciones`, `Other options`, `Alternatives`) or a leading `1.` numbered entry — whichever comes first
+  - Layout A (inline): `1. Codi CNAE: XX.XX – Description – Confiança: Value` with all en-dash/em-dash/hyphen variants
+  - Layout B (multi-line blocks): code, description, and confidence on separate lines within each numbered entry
+  - Layout C (bare code): `1. XX.XX Description – Confiança: Value` without a `Codi CNAE:` prefix on the alternatives
+  - All three layouts covered by a 9-case automated test suite (all passing)
+
+---
+
 ## [1.2.0] — 2026-04-30
 
 ### Added
