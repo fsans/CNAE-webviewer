@@ -648,62 +648,6 @@
     [data-theme="dark"] .cnae-alt-conf.baixa,
     [data-theme="dark"] .cnae-alt-conf.baja    { background: #2d0f14; color: #f08080; }
 
-    /* ── Tech note banner ───────────────────────────────────────── */
-    .tech-note {
-      border-bottom: 1px solid var(--clr-border);
-      background: var(--clr-bg-shell);
-      flex-shrink: 0;
-    }
-
-    .tech-note-toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      width: 100%;
-      padding: 6px 14px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 10.5px;
-      font-weight: 600;
-      color: var(--clr-text-muted);
-      letter-spacing: .03em;
-      text-align: left;
-      transition: color .15s, background .15s;
-    }
-    .tech-note-toggle:hover {
-      color: var(--clr-text-primary);
-      background: var(--clr-bg-messages);
-    }
-
-    .tech-note-toggle .tn-arrow {
-      font-size: 9px;
-      transition: transform .2s ease;
-      display: inline-block;
-      flex-shrink: 0;
-    }
-    .tech-note-toggle.open .tn-arrow {
-      transform: rotate(90deg);
-    }
-
-    .tech-note-body {
-      display: none;
-      padding: 8px 14px 10px;
-      font-size: 11.5px;
-      line-height: 1.65;
-      color: var(--clr-text-muted);
-      background: var(--clr-bg-messages);
-    }
-    .tech-note-body.open {
-      display: block;
-    }
-    .tech-note-body p {
-      margin: 0 0 6px;
-    }
-    .tech-note-body p:last-child {
-      margin-bottom: 0;
-    }
-
     /* ── FM debug panel ─────────────────────────────────────────── */
     #fm-debug {
       display: none;
@@ -744,16 +688,6 @@
     <button class="btn-new-conv" id="btnNew" onclick="newConversation()">
       <i class="bi bi-plus-circle"></i> <span id="i18n-new"></span>
     </button>
-  </div>
-
-  <!-- TECH NOTE -->
-  <div class="tech-note" id="techNote">
-    <button class="tech-note-toggle" id="techNoteToggle" aria-expanded="false">
-      <span class="tn-arrow">&#9658;</span>
-      <i class="bi bi-info-circle" style="font-size:11px;"></i>
-      <span id="i18n-technote-label"></span>
-    </button>
-    <div class="tech-note-body" id="techNoteBody"></div>
   </div>
 
   <!-- MESSAGES -->
@@ -867,13 +801,6 @@ const LOCALES = {
   errConnect:     ['Connection error: ',    'Error de conexion: ',   'Error de connexio: '],
   errNoResponse:  ['No response received from server.', 'No se recibio respuesta del servidor.', 'No s\'ha rebut cap resposta del servidor.'],
 
-  // Tech note
-  techNoteLabel:  ['About CNAE-2025', 'Acerca de la CNAE-2025', 'Sobre la CNAE-2025'],
-  techNoteBody:   [
-    '<p>CNAE-2025 is a statistical classification of economic activities used to summarise and present information about the economic activity of companies in statistical, social, and environmental operations.</p><p>CNAE-2025 results from a joint revision process with its European (NACE Rev. 2.1) and international (ISIC Rev. 5) counterparts, replacing the previous version CNAE-2009. Harmonisation between these classifications ensures comparability and coherence of economic statistics at international level.</p><p>The INE, together with the other actors of the National Statistical System, incorporates CNAE-2025 from 1 January 2025 on a rolling basis across the various statistical operations for which it is responsible, in compliance with European legislation.</p>',
-    '<p>La CNAE-2025 es una clasificación estadística de actividades económicas. Se usa para resumir y presentar información sobre la actividad económica de las empresas en las operaciones estadísticas económicas y de otros dominios (sociales, medioambientales, etc.)</p><p>La CNAE-2025 ha surgido de un proceso de revisión conjunto con sus análogos europeo (NACE Rev. 2.1) e internacional (ISIC Rev. 5), y viene a sustituir a la versión anterior, la CNAE-2009. La armonización entre estas clasificaciones estadísticas permite la comparabilidad y coherencia de las estadísticas económicas a nivel internacional.</p><p>El INE, junto con los demás actores del Sistema Estadístico Nacional, incorpora el uso de la CNAE-2025 a partir del 1 de enero de 2025 de forma escalonada en las diversas operaciones estadísticas de las cuales es responsable para cumplir con la legislación europea.</p>',
-    '<p>La CNAE-2025 és una classificació estadística d\'activitats econòmiques. S\'utilitza per resumir i presentar informació sobre l\'activitat econòmica de les empreses en les operacions estadístiques econòmiques i d\'altres àmbits (socials, mediambientals, etc.)</p><p>La CNAE-2025 ha sorgit d\'un procés de revisió conjunt amb els seus anàlegs europeu (NACE Rev. 2.1) i internacional (ISIC Rev. 5), i ve a substituir la versió anterior, la CNAE-2009. L\'harmonització entre aquestes classificacions estadístiques permet la comparabilitat i coherència de les estadístiques econòmiques a nivell internacional.</p><p>L\'INE, juntament amb els altres actors del Sistema Estadístic Nacional, incorpora l\'ús de la CNAE-2025 a partir de l\'1 de gener de 2025 de forma escalonada en les diverses operacions estadístiques de les quals és responsable per complir amb la legislació europea.</p>'
-  ]
 };
 
 /* ─── t(key) — look up the current language string ─────────── */
@@ -892,9 +819,6 @@ function applyLocale() {
   document.getElementById('i18n-new').textContent        = t('btnNew');
   document.getElementById('i18n-empty-title').textContent = t('emptyTitle');
   document.getElementById('i18n-empty-body').textContent  = t('emptyBody');
-  document.getElementById('i18n-technote-label').textContent = t('techNoteLabel');
-  document.getElementById('techNoteBody').innerHTML       = t('techNoteBody');
-
   inputEl.placeholder          = t('placeholder');
   inputEl.setAttribute('aria-label', t('ariaInput'));
   btnSend.setAttribute('aria-label', t('ariaSend'));
@@ -954,14 +878,6 @@ const convLabel  = document.getElementById('convLabel');
 const fmDebug    = document.getElementById('fm-debug');
 
 if (CONFIG.debug) fmDebug.style.display = 'block';
-
-/* ── Tech note toggle ───────────────────────────────────────── */
-document.getElementById('techNoteToggle').addEventListener('click', function() {
-  const body = document.getElementById('techNoteBody');
-  const open = body.classList.toggle('open');
-  this.classList.toggle('open', open);
-  this.setAttribute('aria-expanded', String(open));
-});
 
 /* ═══════════════════════════════════════════════════════════════
    INIT — read ?lang= from URL, apply locale, then boot
