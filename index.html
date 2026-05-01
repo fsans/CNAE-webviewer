@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CNAE — Buscador de Actividades</title>
 
+  <!-- OnFMReady — must load first, before any FileMaker.PerformScript call -->
+  <script src="onfmready.js"></script>
+
   <!-- Bootstrap 5 CDN -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -1468,6 +1471,22 @@ function fillSuggestion(el) {
 /* ═══════════════════════════════════════════════════════════════
    FILEMAKER WEBVIEWER BRIDGE
    ─────────────────────────────────────────────────────────────
+   onfmready.js (loaded first in <head>) intercepts window.FileMaker
+   before any call is made. If FileMaker has not yet injected the
+   object, calls to FileMaker.PerformScript() are queued and flushed
+   automatically the moment the object becomes available — no polling
+   or Pause[] steps needed.
+
+   Events fired by onfmready.js:
+     filemaker-ready     FileMaker object injected and available
+     filemaker-expected  fires at DOMContentLoaded; event.filemaker
+                         is true inside FileMaker, false in browser
+
+   fmContext (module-level let):
+     null   not yet determined
+     true   running inside FileMaker WebViewer
+     false  plain browser (development / standalone)
+
    Shared envelope format (both directions):
      {
        "cmd":   "<action_name>",   // what to do
@@ -1478,9 +1497,11 @@ function fillSuggestion(el) {
    OUTBOUND  HTML → FileMaker
    ─────────────────────────────────────────────────────────────
    Calls: window.FileMaker.PerformScript(FILEMAKER_CALLBACK, json)
+   (onfmready.js queues the call if FileMaker is not ready yet)
 
    cmd               data fields
    ───────────────   ─────────────────────────────────────────────
+   module_loaded     {}              fired on init; first signal to FileMaker
    query_start       { query, conversationId }
    answer_received   { query, answer, cnaeCodes[], conversationId }
    option_selected   { code, description, confidence, auto, conversationId }
@@ -1488,7 +1509,6 @@ function fillSuggestion(el) {
                        auto=false -> user clicked an alternative
    conversation_reset {}
    error             { message }
-   module_loaded     {}
    state             { conversationId, lastAnswer, lastCodes, lang, theme }
                        response to an inbound getState cmd; token is echoed back
 
@@ -1509,7 +1529,29 @@ function fillSuggestion(el) {
    in the outbound response so FileMaker can resolve async calls.
 ═══════════════════════════════════════════════════════════════ */
 
+/* ── FileMaker context flag (set by onfmready.js events) ────── */
+// true  → running inside FileMaker WebViewer
+// false → plain browser (development / standalone)
+// null  → not yet determined (onfmready.js hasn't fired yet)
+let fmContext = null;
+
+// 'filemaker-expected' fires once at DOMContentLoaded time;
+// event.filemaker is true only when window.FileMaker was injected.
+window.addEventListener('filemaker-expected', (e) => {
+  fmContext = !!e.filemaker;
+  if (CONFIG.debug) console.log('[FM] context:', fmContext ? 'FileMaker WebViewer' : 'browser');
+});
+
+// 'filemaker-ready' fires when window.FileMaker is fully available.
+window.addEventListener('filemaker-ready', () => {
+  fmContext = true;
+  if (CONFIG.debug) console.log('[FM] FileMaker object ready');
+});
+
 /* ── Outbound: HTML → FileMaker ─────────────────────────────── */
+// onfmready.js intercepts calls to window.FileMaker.PerformScript
+// and queues them until the FileMaker object is injected, so this
+// function is safe to call at any point — including during init().
 function fmBridge(cmd, data, token) {
   const envelope = {
     cmd,
@@ -1517,11 +1559,9 @@ function fmBridge(cmd, data, token) {
     token: token || ''
   };
   if (CONFIG.debug) fmDebug.textContent = '-> FM\n' + JSON.stringify(envelope, null, 2);
-  if (window.FileMaker && typeof window.FileMaker.PerformScript === 'function') {
-    window.FileMaker.PerformScript(FILEMAKER_CALLBACK, JSON.stringify(envelope));
-  } else {
-    console.log('[FM Bridge ->]', envelope);
-  }
+  // onfmready.js guarantees window.FileMaker always exists (real or stub),
+  // so calling PerformScript here is always safe.
+  window.FileMaker.PerformScript(FILEMAKER_CALLBACK, JSON.stringify(envelope));
 }
 
 /* ── Inbound handlers: one function per cmd ─────────────────── */

@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.5.0] — 2026-05-01
+
+### Added
+
+- `onfmready.js` loaded as the very first `<script>` in `<head>`, before Bootstrap and the app script. It intercepts `window.FileMaker` from page load and queues any `PerformScript()` calls made before FileMaker injects its object, flushing them automatically once it does — no polling, no `Pause[]` steps needed.
+- `fmContext` module-level flag (`null` / `true` / `false`) tracks whether the widget is running inside a FileMaker WebViewer or a plain browser.
+- `filemaker-expected` event listener: sets `fmContext` at DOMContentLoaded time; logs context in debug mode.
+- `filemaker-ready` event listener: confirms FileMaker object fully available; logs in debug mode.
+
+### Changed
+
+- `fmBridge()` simplified: the `if (window.FileMaker && ...)` guard removed — `onfmready.js` guarantees `window.FileMaker` always exists (real or queuing stub), so `FileMaker.PerformScript()` is always safe to call directly.
+- Bridge comment block updated to document `onfmready.js` integration, the two events, and the `fmContext` flag.
+
+---
+
 ## [1.4.0] — 2026-05-01
 
 ### Changed
