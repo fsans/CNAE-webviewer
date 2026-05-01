@@ -1489,10 +1489,12 @@ function fillSuggestion(el) {
    conversation_reset {}
    error             { message }
    module_loaded     {}
+   state             { conversationId, lastAnswer, lastCodes, lang, theme }
+                       response to an inbound getState cmd; token is echoed back
 
    INBOUND  FileMaker → HTML
    ─────────────────────────────────────────────────────────────
-   Call: window.fmReceive(jsonString)
+   Single entry point: window.fmReceive(jsonString)
 
    cmd               data fields
    ───────────────   ─────────────────────────────────────────────
@@ -1501,17 +1503,10 @@ function fillSuggestion(el) {
    setLang           { lang }          'en' | 'es' | 'ca'
    setTheme          { theme }         'light' | 'dark'
    newConversation   {}
+   getState          {}                fires outbound 'state' cmd with current state
 
    If a token is present in the inbound envelope it is echoed back
    in the outbound response so FileMaker can resolve async calls.
-
-   GLOBAL FUNCTIONS (callable from FileMaker JS step)
-   ─────────────────────────────────────────────────────────────
-   fmReceive(json)        process any inbound envelope
-   fmGetState()           returns { conversationId, lastAnswer, lastCodes, lang, theme }
-   fmNewConversation()    reset conversation
-   fmSetLang(code)        switch language
-   fmSetTheme(mode)       switch theme
 ═══════════════════════════════════════════════════════════════ */
 
 /* ── Outbound: HTML → FileMaker ─────────────────────────────── */
@@ -1545,10 +1540,19 @@ const FM_HANDLERS = {
   },
   newConversation() {
     newConversation();
+  },
+  getState(_data, token) {
+    fmBridge('state', {
+      conversationId,
+      lastAnswer,
+      lastCodes,
+      lang:  CONFIG.lang,
+      theme: CONFIG.theme
+    }, token);
   }
 };
 
-/* ── Inbound: FileMaker → HTML ──────────────────────────────── */
+/* ── Inbound: single entry point FileMaker → HTML ───────────── */
 window.fmReceive = function(jsonString) {
   let envelope;
   try {
@@ -1569,11 +1573,6 @@ window.fmReceive = function(jsonString) {
     console.warn('[FM Bridge <-] unknown cmd:', cmd);
   }
 };
-
-window.fmGetState        = () => JSON.stringify({ conversationId, lastAnswer, lastCodes, lang: CONFIG.lang, theme: CONFIG.theme });
-window.fmNewConversation = newConversation;
-window.fmSetLang         = setLang;
-window.fmSetTheme        = setTheme;
 </script>
 </body>
 </html>

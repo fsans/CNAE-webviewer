@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.4.0] — 2026-05-01
+
+### Changed
+
+- **Breaking:** `window.fmGetState()`, `window.fmNewConversation()`, `window.fmSetLang()`, and `window.fmSetTheme()` global aliases removed — `window.fmReceive` is now the single callable entry point from FileMaker
+- `getState` added as an inbound `cmd` in `FM_HANDLERS`; responds by firing an outbound `state` envelope containing `{ conversationId, lastAnswer, lastCodes, lang, theme }`, with the inbound `token` echoed back for async correlation
+- Comment block updated: removed "GLOBAL FUNCTIONS" section, added `state` to the outbound cmd table, added `getState` to the inbound cmd table
+
+---
+
 ## [1.3.0] — 2026-04-30
 
 ### Fixed
